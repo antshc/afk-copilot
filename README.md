@@ -10,17 +10,33 @@ An autonomous coding agent that uses [GitHub Copilot CLI](https://docs.github.co
 
 ## Setup
 
-Add an alias to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
+Clone the repository and register the `afk` alias in your shell profile.
+
+**1. Clone the repo:**
 
 ```bash
-alias afk='bash /home/dev/sources/afk-copilot/afk/afk.sh'
+git clone https://github.com/your-org/afk-copilot.git ~/afk-copilot
 ```
+
+**2. Add the alias** to your shell profile (`~/.bashrc`, `~/.zshrc`, `~/.bash_aliases`, etc.):
 
 ```bash
-echo "alias afk='bash /home/dev/sources/afk-copilot/afk/afk.sh'" >> ~/.bash_aliases
+echo "alias afk='bash $HOME/afk-copilot/afk.sh'" >> ~/.bashrc
 ```
 
-Reload your shell or run `source ~/.bashrc`.
+Or open the file manually and add:
+
+```bash
+alias afk='bash /path/to/afk-copilot/afk.sh'
+```
+
+**3. Reload your shell:**
+
+```bash
+source ~/.bashrc
+```
+
+Verify with `which afk` or `type afk`.
 
 ## Usage
 
