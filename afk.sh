@@ -33,19 +33,19 @@ for ((i=1; i<=iterations; i++)); do
   issues=$(gh issue list --state open --json number,title,body,comments)
   prompt=$(cat "$SCRIPT_DIR/prompt.md")
 
-  copilot \
-    -p "$(printf '# GitHub Issues\n\n%s\n\n# Previous Commits\n\n%s\n\n%s' "$issues" "$commits" "$prompt")" \
-    --model claude-sonnet-4.6 \
-    --effort medium \
-    --output-format json \
-    --allow-all-tools \
-    --no-ask-user \
-    --log-level debug \
-    --log-dir "$SCRIPT_DIR/logs" \
-    --deny-tool='shell(git push)' \
-    --deny-tool='shell(git reset)' \
-    --deny-tool='shell(git rebase)' \
-    --deny-tool='shell(git clean)' \
+  docker run --rm -i \
+    --cap-add NET_ADMIN --cap-add SETUID --cap-add SETGID --cap-drop ALL \
+    --network host \
+    -e COPILOT_GITHUB_TOKEN="$COPILOT_GITHUB_TOKEN" \
+    -e COPILOT_OUTPUT_FORMAT=json \
+    -e COPILOT_EFFORT=medium \
+    -e COPILOT_LOG_LEVEL=debug \
+    -e COPILOT_MODEL=claude-sonnet-4.6 \
+    -v "/home/pet/_projects/sandbox_runtime/logs/mitmproxy:/var/log/mitmproxy" \
+    -v "/home/pet/_projects/sandbox_runtime/logs/copilot:/var/log/copilot" \
+    -v "$(pwd):/home/ubuntu/workspace" \
+    khdevnet/sandbox copiloty \
+      "$(printf '# GitHub Issues\n\n%s\n\n# Previous Commits\n\n%s\n\n%s' "$issues" "$commits" "$prompt")" \
   | grep --line-buffered '^{' \
   | tee "$tmpfile" \
   | jq --unbuffered -rj "$stream_text"
