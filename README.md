@@ -21,13 +21,13 @@ git clone https://github.com/your-org/afk-copilot.git ~/afk-copilot
 **2. Add the alias** to your shell profile (`~/.bashrc`, `~/.zshrc`, `~/.bash_aliases`, etc.):
 
 ```bash
-echo "alias afk='bash $HOME/afk-copilot/afk.sh'" >> ~/.bashrc
+echo "alias afk='bash $HOME/afk-copilot/afk-log.sh'" >> ~/.bashrc
 ```
 
 Or open the file manually and add:
 
 ```bash
-alias afk='bash /path/to/afk-copilot/afk.sh'
+alias afk='bash /path/to/afk-copilot/afk-log.sh'
 ```
 
 **3. Reload your shell:**
