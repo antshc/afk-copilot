@@ -25,8 +25,6 @@ stream_text='select(.type == "assistant.message_delta").data.text // empty | gsu
 # jq filter to extract final result (accumulated assistant text content)
 final_result='[select(.type == "assistant.message").data.content // empty] | add // empty'
 
-mkdir -p "$(pwd)/bin/.afk/logs/mitmproxy" "$(pwd)/bin/.afk/logs/copilot"
-
 for ((i=1; i<=iterations; i++)); do
   tmpfile=$(mktemp)
   prompt_file=$(mktemp)
