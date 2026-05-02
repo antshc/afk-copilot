@@ -25,6 +25,10 @@ stream_text='select(.type == "assistant.message_delta").data.text // empty | gsu
 # jq filter to extract final result (accumulated assistant text content)
 final_result='[select(.type == "assistant.message").data.content // empty] | add // empty'
 
+LOG_DIR="$SCRIPT_DIR/runtime/logs/afk"
+mkdir -p "$LOG_DIR"
+RUN_LOG="$LOG_DIR/run_$(date +%Y%m%dT%H%M%S).log"
+
 for ((i=1; i<=iterations; i++)); do
   tmpfile=$(mktemp)
   prompt_file=$(mktemp)
@@ -44,13 +48,14 @@ for ((i=1; i<=iterations; i++)); do
     -e COPILOT_EFFORT=medium \
     -e COPILOT_LOG_LEVEL=debug \
     -e COPILOT_MODEL=claude-sonnet-4.6 \
-    -v "/home/pet/_projects/sandbox_runtime/logs/mitmproxy:/var/log/mitmproxy" \
-    -v "/home/pet/_projects/sandbox_runtime/logs/copilot:/var/log/copilot" \
+    -v "$SCRIPT_DIR/runtime/logs/mitmproxy:/var/log/mitmproxy" \
+    -v "$SCRIPT_DIR/runtime/logs/copilot:/var/log/copilot" \
     -v "$(pwd):/home/ubuntu/workspace" \
     -v "$prompt_file:/tmp/prompt.md" \
     khdevnet/sandbox copiloty \
       "@/tmp/prompt.md" \
   | tee "$tmpfile" \
+  | tee -a "$RUN_LOG" \
   | jq --unbuffered -rj "$stream_text"
 
   result=$(jq -r "$final_result" "$tmpfile")
