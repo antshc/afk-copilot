@@ -19,19 +19,22 @@ if [ -n "$target_repo" ]; then
   cd "$target_repo"
 fi
 
-# jq filter to extract streaming text deltas
-stream_text='select(.type == "assistant.message_delta") | .data.deltaContent // empty'
+# jq filter to extract streaming text from assistant messages
+stream_text='select(.type == "assistant.message_delta").data.text // empty | gsub("\n"; "\r\n") | . + "\r\n\n"'
 
-# jq filter to extract final complete message
-final_message='select(.type == "assistant.message") | .data.content // empty'
+# jq filter to extract final result (accumulated assistant text content)
+final_result='[select(.type == "assistant.message").data.content // empty] | add // empty'
 
 for ((i=1; i<=iterations; i++)); do
   tmpfile=$(mktemp)
-  trap "rm -f $tmpfile" EXIT
+  prompt_file=$(mktemp)
+  trap "rm -f $tmpfile $prompt_file" EXIT
 
   commits=$(git log -n 5 --format="%H%n%ad%n%B---" --date=short 2>/dev/null || echo "No commits found")
   issues=$(gh issue list --state open --json number,title,body,comments)
   prompt=$(cat "$SCRIPT_DIR/prompt.md")
+
+  printf '# GitHub Issues\n\n%s\n\n# Previous Commits\n\n%s\n\n%s' "$issues" "$commits" "$prompt" > "$prompt_file"
 
   docker run --rm -i \
     --cap-add NET_ADMIN --cap-add SETUID --cap-add SETGID --cap-drop ALL \
@@ -44,13 +47,13 @@ for ((i=1; i<=iterations; i++)); do
     -v "/home/pet/_projects/sandbox_runtime/logs/mitmproxy:/var/log/mitmproxy" \
     -v "/home/pet/_projects/sandbox_runtime/logs/copilot:/var/log/copilot" \
     -v "$(pwd):/home/ubuntu/workspace" \
+    -v "$prompt_file:/tmp/prompt.md" \
     khdevnet/sandbox copiloty \
-      "$(printf '# GitHub Issues\n\n%s\n\n# Previous Commits\n\n%s\n\n%s' "$issues" "$commits" "$prompt")" \
-  | grep --line-buffered '^{' \
+      "@/tmp/prompt.md" \
   | tee "$tmpfile" \
   | jq --unbuffered -rj "$stream_text"
 
-  result=$(jq -r "$final_message" "$tmpfile" | tail -1)
+  result=$(jq -r "$final_result" "$tmpfile")
 
   if [[ "$result" == *"<promise>NO MORE TASKS</promise>"* ]]; then
     echo "Ralph complete after $i iterations."
